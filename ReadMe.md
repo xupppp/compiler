@@ -4,13 +4,21 @@
 
 2.修改标识符定义，类型名称以大写开头，变量名以小写开头
 
-3.增加冒号 COLON
-
-4.增加关键字 break  default  switch  case
+3.增加关键字do、for
 
 ### 语法分析：
 
-1.增加if的多种表示： switch case dedault 
+1.增加do while
+
+2.增加for循环
+
+### 用例说明：
+
+前提：类型名称大写
+
+1.ex1.c是说明do while
+
+2.ex2.c是说明for循环
 
 
 
