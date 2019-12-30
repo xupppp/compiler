@@ -198,6 +198,26 @@ let rec exec stmt (locEnv : locEnv) (gloEnv : gloEnv) (store : store) : store =
               if v<>0 then loop (exec body locEnv gloEnv store2)
                       else store2  //退出循环返回 环境store2
       loop store
+ 
+    | DoWhile(body, e) ->
+      let rec loop store1 =
+              let (v, store2) = eval e locEnv gloEnv store1
+              if v<>0 then loop (exec body locEnv gloEnv store2)
+                      else store2
+      loop store
+ 
+    | For(x,estart,estop,stmt) ->
+      let (v, store1) = eval x locEnv gloEnv store
+      let rec loop store2 =
+              let (v2,store3) = eval estart locEnv gloEnv store2
+              let x1 store6 =
+                       let store4 = exec stmt locEnv gloEnv store6
+                       let (v3,store5) = eval estop locEnv gloEnv store4
+                       loop store5
+              if v2<>0 then x1 store3
+                       else store3
+      loop store1
+ 
 
     | Expr e ->
       // _ 表示丢弃e的值,返回 变更后的环境store1 
