@@ -177,6 +177,7 @@ let initEnvAndStore (topdecs : topdec list) : locEnv * funEnv * store =
     // locEnv ([],0) 变量定义为空列表[],下一个空闲地址为0
     // funEnv []   函数定义为空列表[]
     addv topdecs ([], 0) [] emptyStore
+ 
 
 (* ------------------------------------------------------------------- *)
 
@@ -188,6 +189,18 @@ let rec exec stmt (locEnv : locEnv) (gloEnv : gloEnv) (store : store) : store =
       let (v, store1) = eval e locEnv gloEnv store
       if v<>0 then exec stmt1 locEnv gloEnv store1 //True分支
               else exec stmt2 locEnv gloEnv store1 //False分支
+ 
+    | Switch(e, l) ->
+      let (v, store1) = eval e locEnv gloEnv store
+      let rec loop ss v2 store2 =
+              match ss with
+                 | [ ] -> store2
+                 | s1::sr -> let n = fst(s1)
+                             if n<>v2 then loop sr v2 store2
+                             else loop sr v2 (exec snd(s1) locEnv gloEnv store2)
+      loop l v store1
+
+
     | While(e, body) ->
 
       //定义 While循环辅助函数 loop
@@ -200,11 +213,12 @@ let rec exec stmt (locEnv : locEnv) (gloEnv : gloEnv) (store : store) : store =
       loop store
  
     | DoWhile(body, e) ->
-      let rec loop store1 =
-              let (v, store2) = eval e locEnv gloEnv store1
-              if v<>0 then loop (exec body locEnv gloEnv store2)
-                      else store2
-      loop store
+      let store1 = exec body locEnv gloEnv store
+      let rec loop store2 =
+              let (v, store3) = eval e locEnv gloEnv store2
+              if v<>0 then loop (exec body locEnv gloEnv store3)
+                      else store3
+      loop store1
  
     | For(x,estart,estop,stmt) ->
       let (v, store1) = eval x locEnv gloEnv store
@@ -218,6 +232,16 @@ let rec exec stmt (locEnv : locEnv) (gloEnv : gloEnv) (store : store) : store =
                        else store3
       loop store1
  
+    | Three(e1,e2,e3) ->
+      let (v, store1) = eval e1 locEnv gloEnv store
+      let f1 store2 =
+                   let(v2,store3)=eval e2 locEnv gloEnv store2
+                   store3
+      let f2 store3 =
+                   let(v3,store4)=eval e3 locEnv gloEnv store3
+                   store4
+      if v<>0 then f1 store1
+      else f2 store1
 
     | Expr e ->
       // _ 表示丢弃e的值,返回 变更后的环境store1 
@@ -253,6 +277,10 @@ and eval e locEnv gloEnv store : int * store =
                         (res, setSto store2 loc res) 
     | CstI i         -> (i, store)
     | Addr acc       -> access acc locEnv gloEnv store
+    | PlusOne acc    -> let (loc, store1) = access acc locEnv gloEnv store
+                        let res = getSto store1 loc
+                        let res2 = res+1
+                        (res2, setSto store1 loc res2)
     | Prim1(ope, e1) ->
       let (i1, store1) = eval e1 locEnv gloEnv store
       let res =

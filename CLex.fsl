@@ -28,6 +28,8 @@ let keyword s =
      | "while"   -> WHILE 
      | "do"      -> DO 
      | "for"     -> FOR  
+     | "switch"  -> SWITCH
+     | "case"    -> CASE
      | _         -> NAME s
 
 let keyword2 s2 =
@@ -58,6 +60,7 @@ rule Token = parse
                      { keyword (lexemeAsString lexbuf) }
    | ['a'-'z''A'-'Z']['a'-'z''A'-'Z''0'-'9']*
                      { keyword2 (lexemeAsString lexbuf) }
+   | "++"            { PLUSONE }
    | '+'             { PLUS } 
    | '-'             { MINUS } 
    | '*'             { TIMES } 
@@ -82,6 +85,7 @@ rule Token = parse
    | ']'             { RBRACK }
    | ';'             { SEMI }
    | ','             { COMMA }
+   | ':'             { COLON }
    | "//"            { EndLineComment lexbuf; Token lexbuf }
    | "(*"            { Comment lexbuf; Token lexbuf }
    | '"'             { CSTSTRING (String [] lexbuf) }

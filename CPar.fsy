@@ -17,11 +17,11 @@ let nl = CstI 10
 %token <int> CSTINT CSTBOOL
 %token <string> CSTSTRING NAME
 
-%token CHAR ELSE IF INT NULL PRINT PRINTLN RETURN VOID WHILE DO FOR
-%token PLUS MINUS TIMES DIV MOD
+%token CHAR ELSE IF INT NULL PRINT PRINTLN RETURN VOID WHILE DO FOR SWITCH CASE
+%token PLUS MINUS TIMES DIV MOD PLUSONE
 %token EQ NE GT LT GE LE
 %token NOT SEQOR SEQAND
-%token LPAR RPAR LBRACE RBRACE LBRACK RBRACK SEMI COMMA ASSIGN AMP
+%token LPAR RPAR LBRACE RBRACE LBRACK RBRACK SEMI COMMA ASSIGN AMP COLON
 %token EOF
 
 %right ASSIGN             /* lowest precedence */
@@ -105,6 +105,19 @@ StmtM:  /* No unbalanced if-else */
   | WHILE LPAR Expr RPAR StmtM          { While($3, $5)        }
   | DO StmtM WHILE LPAR Expr RPAR SEMI  { DoWhile($2, $5)      }
   | FOR LPAR Expr SEMI Expr SEMI Expr RPAR StmtM  { For($3, $5, $7, $9)  }
+  | Expr COLON Expr COLON Expr SEMI      { Three($1,$3,$5) }
+  | SWITCH LPAR Expr RPAR LBRACE SwitchStmt RBRACE     { Switch($3,$6) } 
+;
+
+
+SwitchStmt:
+    /* empty */                          { [] }
+    | SwitchStmt1                        { $1 }
+;
+
+SwitchStmt1:
+    CASE CSTINT COLON Stmt SwitchStmt1    { ($2,$4)::$5 }
+  | CASE CSTINT COLON Stmt                { [($2,$4)] }
 ;
 
 StmtU:
@@ -113,6 +126,7 @@ StmtU:
   | WHILE LPAR Expr RPAR StmtU          { While($3, $5)        }
   | DO StmtU WHILE LPAR Expr RPAR SEMI  { DoWhile($2, $5)      }
   | FOR LPAR Expr SEMI Expr SEMI Expr RPAR StmtU  { For($3, $5, $7, $9)  }
+  | Expr COLON Expr COLON Expr SEMI      { Three($1,$3,$5) }
 ;
 
 Expr: 
@@ -127,6 +141,7 @@ ExprNotAccess:
   | NOT Expr                            { Prim1("!", $2)      }
   | PRINT Expr                          { Prim1("printi", $2) }
   | PRINTLN                             { Prim1("printc", nl) }
+  | Access PLUSONE                      { PlusOne($1) }
   | Expr PLUS  Expr                     { Prim2("+",  $1, $3) }
   | Expr MINUS Expr                     { Prim2("-",  $1, $3) }
   | Expr TIMES Expr                     { Prim2("*",  $1, $3) }
