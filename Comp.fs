@@ -164,6 +164,11 @@ let rec cStmt stmt (varEnv : VarEnv) (funEnv : FunEnv) : instr list =
       @ cExpr e2 varEnv funEnv @ [INCSP -1] @ [GOTO labend]
       @ [Label labelse] @ cExpr e3 varEnv funEnv @ [INCSP -1]
       @ [Label labend]
+    | Until(e, body) ->
+      let labbegin = newLabel()
+      let labtest  = newLabel()
+      [GOTO labtest; Label labbegin] @ cStmt body varEnv funEnv
+      @ [Label labtest] @ cExpr e varEnv funEnv @ [IFZERO labbegin]
     | Expr e -> 
       cExpr e varEnv funEnv @ [INCSP -1]
     | Block stmts -> 
@@ -210,6 +215,8 @@ and cExpr (e : expr) (varEnv : VarEnv) (funEnv : FunEnv) : instr list =
     | Addr acc       -> cAccess acc varEnv funEnv
     | PlusOne acc    -> cAccess acc varEnv funEnv @ cAccess acc varEnv funEnv @ [LDI] @ [CSTI 1]
                         @ [ADD] @ [STI]
+    | SubOne acc     -> cAccess acc varEnv funEnv @ cAccess acc varEnv funEnv @ [LDI] @ [CSTI 1]
+                        @ [SUB] @ [STI]
     | Prim1(ope, e1) ->
       cExpr e1 varEnv funEnv
       @ (match ope with
@@ -218,13 +225,18 @@ and cExpr (e : expr) (varEnv : VarEnv) (funEnv : FunEnv) : instr list =
          | "printc" -> [PRINTC]
          | _        -> raise (Failure "unknown primitive 1"))
     | Prim2(ope, e1, e2) ->
+      let labtest  = newLabel()
+      let labend  = newLabel()
       cExpr e1 varEnv funEnv
       @ cExpr e2 varEnv funEnv
       @ (match ope with
          | "*"   -> [MUL]
          | "+"   -> [ADD]
          | "-"   -> [SUB]
-         | "/"   -> [DIV]
+         | "/"   -> cExpr e2 varEnv funEnv
+                    @ [IFZERO labtest] @ [DIV] @ [GOTO labend] @ [Label labtest]
+                    @ raise (Failure "Dividend cannot be 0")
+                    @ [Label labend]
          | "%"   -> [MOD]
          | "=="  -> [EQ]
          | "!="  -> [EQ; NOT]

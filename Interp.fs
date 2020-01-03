@@ -220,6 +220,13 @@ let rec exec stmt (locEnv : locEnv) (gloEnv : gloEnv) (store : store) : store =
                       else store3
       loop store1
  
+    | Until(e, body) ->
+      let rec loop store2 =
+              let (v, store3) = eval e locEnv gloEnv store2
+              if v<>0 then store3
+              else loop (exec body locEnv gloEnv store3)
+      loop store
+ 
     | For(x,estart,estop,stmt) ->
       let (v, store1) = eval x locEnv gloEnv store
       let rec loop store2 =
@@ -281,6 +288,10 @@ and eval e locEnv gloEnv store : int * store =
                         let res = getSto store1 loc
                         let res2 = res+1
                         (res2, setSto store1 loc res2)
+    | SubOne acc     -> let (loc, store1) = access acc locEnv gloEnv store
+                        let res = getSto store1 loc
+                        let res2 = res-1
+                        (res2, setSto store1 loc res2)
     | Prim1(ope, e1) ->
       let (i1, store1) = eval e1 locEnv gloEnv store
       let res =
@@ -298,7 +309,8 @@ and eval e locEnv gloEnv store : int * store =
           | "*"  -> i1 * i2
           | "+"  -> i1 + i2
           | "-"  -> i1 - i2
-          | "/"  -> i1 / i2
+          | "/"  -> if i2<>0 then i1 / i2
+                             else failwith ("Dividend cannot be 0")
           | "%"  -> i1 % i2
           | "==" -> if i1 =  i2 then 1 else 0
           | "!=" -> if i1 <> i2 then 1 else 0

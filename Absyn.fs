@@ -19,6 +19,7 @@ and expr =
   | Addr of access                   (* &x   or  &*p   or  &a[e]    *)
   | CstI of int                      (* Constant                    *)
   | PlusOne of access
+  | SubOne of access
   | Prim1 of string * expr           (* Unary primitive operator    *)
   | Prim2 of string * expr * expr    (* Binary primitive operator   *)
   | Andalso of expr * expr           (* Sequential and              *)
@@ -40,6 +41,7 @@ and stmt =
   | For of expr * expr * expr * stmt
   | Three of expr * expr * expr
   | Switch of expr * (int * stmt) list
+  | Until of expr * stmt
                                                                    
 and stmtordec =                                                    
   | Dec of typ * string              (* Local variable declaration  *)
